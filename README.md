@@ -54,7 +54,7 @@ Here are all arguments that can be used within this plugin:
 Give the host address of an OmniCube with the IP address or FQDN
 
 -U &lt;ssh user&gt;
-OmniCube SSH username (remember to escape the backslash in the username. For example domain\myuser would be "domain\\\\\myuser" or domain\\\\\\\myuser as argument)
+OmniCube SSH username (remember to escape the backslash in the username. For example domain\myuser would be "domain\\\myuser" or domain\\\\myuser as argument)
 
 -P &lt;ssh password&gt;
 OmniCube SSH password

@@ -1,5 +1,27 @@
 #!/usr/bin/env python
 
+'''
+This Python Nagios plugin checks for any failed VM backups on SimpliVity Omnicubes.
+There's also a second mode in this plugin to check if all VMs have assigned backup policies.
+
+Copyright (c) 2014 www.usolved.net 
+Published under https://github.com/usolved/check_usolved_omnicube_backup
+
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
+'''
+
 import sys
 import os
 import optparse
@@ -199,4 +221,3 @@ elif arg_mode == "policy":
 else:
 	return_msg = 'Unknown - Please select a mode.\nType ./'+os.path.basename(__file__)+' --help for all options.'
 	output_nagios(return_msg,'',return_code['UNKNOWN'])
-	

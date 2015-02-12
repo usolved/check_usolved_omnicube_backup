@@ -4,7 +4,10 @@
 This Python Nagios plugin checks for any failed VM backups on SimpliVity Omnicubes.
 There's also a second mode in this plugin to check if all VMs have assigned backup policies.
 
-Copyright (c) 2014 www.usolved.net 
+Python 2 is required with use of the libraries sys, os, optparse, time, datetime, pxssh
+Normally you just need to install "sudo yum install pexpect.noarch" or "sudo apt-get install python-pexpect"
+
+Copyright (c) 2015 www.usolved.net 
 Published under https://github.com/usolved/check_usolved_omnicube_backup
 
 
@@ -20,6 +23,15 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+------------------------
+
+v1.1
+Bugfix for the backup status. When the retried backup succeeded you'll get an OK status and an extended info which hosts needed more than one try
+
+v1.0
+Initial release
+
 '''
 
 import sys
@@ -108,12 +120,14 @@ def get_failed_backups():
 	else:
 		time_current_date = arg_backupdate
 
-	ssh.sendline('svt-backup-show --status failed --output xml --since '+time_current_date)
+	ssh.sendline('svt-backup-show --output xml --since '+time_current_date)
 	ssh.prompt()
 	data = ssh.before
+
 	data, rest = data.split('\n', 1) #strip out command itself
-	#data = data.splitlines()
-	return rest
+	rest, rest2 = rest.split('\n', 1) #strip out 2. line, not for --state failed
+
+	return rest2
 
 
 
@@ -121,29 +135,53 @@ def get_failed_backups_status(hosts_failed_backups):
 
 	global return_msg
 
-	return_hosts	= ''
-	backup_status 	= 0
+	return_hosts			= ''
+	return_hosts_retried	= ''
+	backup_status 			= 0
+	backup_success 			= []
 
 	try:
 		hosts_failed_backups_xml = et.fromstring(hosts_failed_backups)
 		for child in hosts_failed_backups_xml.findall('Backup'):
 
-			failed_timestamp = int(child.find('timestamp').text)
-			failed_timestamp = datetime.datetime.fromtimestamp(failed_timestamp).strftime('%Y-%m-%d %H:%M')
+			backup_state 	= int(child.find('state').text)
+			backup_host 	= child.find('hiveName').text
 
-			return_hosts += child.find('hiveName').text+" ("+ str(failed_timestamp)+"), "
-			backup_status = 2
+			# if the state was successfull, add these hosts to array
+			if backup_state == 4:
+				backup_success.append(backup_host)
+			# if backup failed go to this tree
+			elif backup_state == 3:
+				# if current host has not succeeded then mark them critical
+				if backup_host not in backup_success:
+					failed_timestamp = int(child.find('timestamp').text)
+					failed_timestamp = datetime.datetime.fromtimestamp(failed_timestamp).strftime('%Y-%m-%d %H:%M')
+
+					return_hosts += backup_host+" ("+ str(failed_timestamp)+"), "
+
+					backup_status = 2
+
+				# just add hosts for informational reasons
+				else:
+					return_hosts_retried += backup_host+", "
 
 
 		if backup_status == 0:
 			return_msg = 'OK - All backups were successful'
+
+			if return_hosts_retried:
+				return_msg += '\nHosts with more than one try for successful backup:\n'+return_hosts_retried[:-2]
+
 		else:
-			return_hosts 	= return_hosts[:-2]
+			return_hosts 	= return_hosts[:-2] #delete last 2 characters
 			return_msg 		= 'Critical - Backup for '+return_hosts+' failed'
+			
+			if return_hosts_retried:
+				return_msg += '\nHosts with more than one try for successful backup:\n'+return_hosts_retried[:-2]
 
 		return backup_status
 	except:
-		return_msg = 'Unknown - Returned XML data is not valid'
+		return_msg = 'Unknown - Returned XML data is not valid. For example a missing root element.'
 		return 3
 
 ####################################################

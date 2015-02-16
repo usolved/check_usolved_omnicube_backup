@@ -98,7 +98,6 @@ def ssh_connect(hostname, username, password, timeout):
 	try:
 		ssh = pxssh.pxssh(timeout=timeout)
 		ssh.login(hostname, username, password)
-		ssh.prompt()
 		return ssh
 
 	except pxssh.ExceptionPxssh, e:

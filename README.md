@@ -29,7 +29,7 @@ sudo apt-get install python-pexpect
 
 Why not Python 3 you may ask?
 Most Nagios / Icinga installations are already using other plugins which are written in Python 2.
-So for compatibility reasons i've decided to use Python 2 as well.
+So for compatibility reasons I've decided to use Python 2 as well.
 
 
 ## Usage

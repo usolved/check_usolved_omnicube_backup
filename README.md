@@ -3,7 +3,7 @@
 ## Overview
 
 This Python Nagios plugin checks for any failed VM backups on SimpliVity Omnicubes. 
-There's also a second mode in this plugin to check if all VMs have assigned backup policies.
+There's also a second mode in this plugin to display all VMs with a specific backup policiy.
 
 ## Authors
 
@@ -62,6 +62,9 @@ OmniCube SSH password
 -M &lt;mode&gt;
 Plugin mode (-M status (to check if all backups were successful) or -M policy (to check if all VMs have policies assigned))
 
+[-N &lt;policy name&gt;]
+When you use -M policy then you have to set the policy name here
+
 [-E &lt;exclude VMs&gt;]
 Optional: Exclude comma separated hosts from the check for policy check
 
@@ -91,7 +94,7 @@ Example for checking the assigned backup policies:
 <pre><code>
 define command {
     command_name    check_usolved_omnicube_backup_policy
-    command_line    $USER1$/check_usolved_omnicube_backup.py -H $HOSTADDRESS$ -U $ARG1$ -P $ARG2$ -M policy -E $ARG3$
+    command_line    $USER1$/check_usolved_omnicube_backup.py -H $HOSTADDRESS$ -U $ARG1$ -P $ARG2$ -M policy -N policyname -E $ARG3$
 }
 </code></pre>
 

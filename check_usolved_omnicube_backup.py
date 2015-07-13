@@ -26,6 +26,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ------------------------
 
+v1.2
+Changed policy check that you can list hosts with a specific policy name
+
 v1.1
 Bugfix for the backup status. When the retried backup succeeded you'll get an OK status and an extended info which hosts needed more than one try
 
@@ -65,6 +68,7 @@ parser.add_option('-H', '--hostname', help='IP or hostname of the OmniCube host'
 parser.add_option('-U', '--username', help='OmniCube SSH username (remember to escape the backslash in the username. For example domain\myuser would be "domain\\\\\myuser" or domain\\\\\\\myuser as argument)', dest='arg_username', type='string')
 parser.add_option('-P', '--password', help='OmniCube SSH password', dest='arg_password', type='string')
 parser.add_option('-M', '--mode', help='Plugins mode (-M status (to check if all backups were successful) or -M policy (to check if all VMs have policies assigned))', dest='arg_mode', type='string')
+parser.add_option('-N', '--policyname', help='Backup policy name', dest='arg_policyname', type='string')
 parser.add_option('-E', '--exclude', help='Exclude comma separated hosts for policy check', dest='arg_exclude', type='string', default='')
 parser.add_option('-D', '--backupdate', help='Without an argument the backups status check gets the status from yesterday. If you wish to check for other days, give the argument -D YYYY-MM-DD', dest='arg_backupdate', type='string', default='yesterday')
 parser.add_option('-T', '--timeout', help='SSH timeout in seconds', dest='arg_timeout', type='int', default=45)
@@ -74,6 +78,7 @@ arg_hostname 		= opts.arg_hostname
 arg_username		= opts.arg_username
 arg_password		= opts.arg_password
 arg_mode			= opts.arg_mode
+arg_policyname		= opts.arg_policyname
 arg_exclude			= opts.arg_exclude
 arg_backupdate		= opts.arg_backupdate
 arg_timeout			= opts.arg_timeout
@@ -98,6 +103,7 @@ def ssh_connect(hostname, username, password, timeout):
 	try:
 		ssh = pxssh.pxssh(timeout=timeout)
 		ssh.login(hostname, username, password)
+		#ssh.prompt()
 		return ssh
 
 	except pxssh.ExceptionPxssh, e:
@@ -124,9 +130,9 @@ def get_failed_backups():
 	data = ssh.before
 
 	data, rest = data.split('\n', 1) #strip out command itself
-	rest, rest2 = rest.split('\n', 1) #strip out 2. line, not for --state failed
+	#rest, rest2 = rest.split('\n', 1) #strip out 2. line, not for --state failed
 
-	return rest2
+	return rest
 
 
 
@@ -167,14 +173,18 @@ def get_failed_backups_status(hosts_failed_backups):
 
 		if backup_status == 0:
 			return_msg = 'OK - All backups were successful'
-
 			if return_hosts_retried:
 				return_msg += '\nHosts with more than one try for successful backup:\n'+return_hosts_retried[:-2]
 
 		else:
 			return_hosts 	= return_hosts[:-2] #delete last 2 characters
-			return_msg 		= 'Critical - Backup for '+return_hosts+' failed'
-			
+			return_msg 		= 'Critical - Backup failed for '+return_hosts
+
+			if len(return_msg) > 250:
+				return_msg_normal = return_msg[:250]
+				return_msg_extended = return_msg[250:]
+				return_msg = return_msg_normal+'...\n...'+return_msg_extended+'\n'
+
 			if return_hosts_retried:
 				return_msg += '\nHosts with more than one try for successful backup:\n'+return_hosts_retried[:-2]
 
@@ -185,7 +195,7 @@ def get_failed_backups_status(hosts_failed_backups):
 
 ####################################################
 
-def get_hosts_with_no_policy():
+def get_hosts_with_policy():
 	ssh.sendline('svt-vm-show --output xml')
 	ssh.prompt()
 	data = ssh.before
@@ -194,33 +204,37 @@ def get_hosts_with_no_policy():
 	return rest
 
 
-def get_hosts_with_no_policy_status(hosts_with_no_policy):
+def get_hosts_with_policy_status(hosts_with_policy):
 
 	global return_msg
 	return_hosts		= ''
-	no_policy_status 	= 0
+	hosts_found 		= 0
 
-	try:
-		hosts_with_no_policy_xml = et.fromstring(hosts_with_no_policy)
-		for child in hosts_with_no_policy_xml.findall('VM'):
+	if arg_policyname:
 
-			if child.find('policy').text == "empty":
-				if child.find('platformName').text not in hosts_excluded:
-					return_hosts += child.find('platformName').text+", "
-					no_policy_status = 2		
+		try:
+			hosts_with_policy_xml = et.fromstring(hosts_with_policy)
+			for child in hosts_with_policy_xml.findall('VM'):
+
+				if child.find('policy').text == arg_policyname:
+					if child.find('platformName').text not in hosts_excluded:
+						return_hosts += child.find('platformName').text+", "
+						hosts_found = 1		
 
 
-		if no_policy_status == 0:
-			return_msg = 'OK - Backup policies for all hosts are configured'
-		else:
-			return_hosts 	= return_hosts[:-2]
-			return_msg 		= 'Critical - Backup policy for '+return_hosts+' is missing'
+			if hosts_found == 0:
+				return_msg = 'No hosts found with backup policy "'+arg_policyname+'"'
+			else:
+				return_hosts 	= return_hosts[:-2]
+				return_msg 		= 'Hosts with backup policy "'+arg_policyname+'": '+return_hosts
 
-		return no_policy_status
-	except:
-		return_msg = 'Unknown - Returned XML data is not valid'
+			return 0
+		except:
+			return_msg = 'Unknown - Returned XML data is not valid'
+			return 3
+	else:
+		return_msg = 'Unknown - No policy name given. Please add argument -N'
 		return 3
-
 
 
 ######################################################################
@@ -243,9 +257,9 @@ if arg_mode == "status":
 	#ssh_logout()
 elif arg_mode == "policy":
 	ssh 					= ssh_connect(arg_hostname, arg_username, arg_password, arg_timeout)
-	hosts_with_no_policy 	= get_hosts_with_no_policy()
+	hosts_with_policy 		= get_hosts_with_policy()
 
-	no_policy_status 		= get_hosts_with_no_policy_status(hosts_with_no_policy)
+	no_policy_status 		= get_hosts_with_policy_status(hosts_with_policy)
 
 	if no_policy_status == 0:
 		output_nagios(return_msg,'',return_code['OK'])

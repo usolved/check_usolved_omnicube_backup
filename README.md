@@ -68,11 +68,11 @@ When you use -M policy then you have to set the policy name here
 [-E &lt;exclude VMs&gt;]
 Optional: Exclude comma separated hosts from the check for policy check
 
-[-D &lt;perfdata&gt;]
+[-D &lt;backup date&gt;]
 Optional: Without an argument the backups status check gets the status from yesterday.
 If you wish to check for other time ranges, give the argument -D YYYY-MM-DD
 
-[-T &lt;perfdata&gt;]
+[-T &lt;timeout&gt;]
 Optional: SSH timeout in seconds. Default is 45 seconds.
 </code></pre>
 

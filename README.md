@@ -154,16 +154,16 @@ self.read_nonblocking(size=10000,timeout=1) # GAS: Clear out the cache before ge
 
 ## What's new
 
-v1.3
-Added enhanced argument status:notstarted to check for not started backups (OmniCube command svt-backup-show just includes started backups)
-Bugfix for parameter -D. The --until argument is now being used for the OmniCube command
-Timeout parameter is now also being used for the OmniCube commands and not just the SSH connect
+v1.3  
+Added enhanced argument status:notstarted to check for not started backups (OmniCube command svt-backup-show just includes started backups)  
+Bugfix for parameter -D. The --until argument is now being used for the OmniCube command  
+Timeout parameter is now also being used for the OmniCube commands and not just the SSH connect  
 
-v1.2
-Changed policy check that you can list hosts with a specific policy name
+v1.2  
+Changed policy check that you can list hosts with a specific policy name  
 
-v1.1
+v1.1  
 Bugfix for the backup status. When the retried backup succeeded you'll get an OK status and an extended info which hosts needed more than one try
 
-v1.0
+v1.0  
 Initial release

@@ -60,7 +60,7 @@ OmniCube SSH username (remember to escape the backslash in the username. For exa
 OmniCube SSH password
 
 -M <mode>
-Plugin mode (-M status (to check if all backups were successful) or -M policy (to check if all VMs have policies assigned))
+Plugins mode (-M status (to check if all backups were successful), -M status:notstarted (to check if all backups were successful including not started backups) or -M policy (to check if all VMs have policies assigned))
 
 [-N <policy name>]
 When you use -M policy then you have to set the policy name here
@@ -73,7 +73,7 @@ Optional: Without an argument the backups status check gets the status from yest
 If you wish to check for other time ranges, give the argument -D YYYY-MM-DD
 
 [-T <timeout>]
-Optional: SSH timeout in seconds. Default is 45 seconds.
+Optional: SSH and OmniCube command timeout in seconds. Default is 45 seconds.
 ```
 
 ### Install in Nagios
@@ -153,6 +153,11 @@ self.read_nonblocking(size=10000,timeout=1) # GAS: Clear out the cache before ge
 ```
 
 ## What's new
+
+v1.3
+Added enhanced argument status:notstarted to check for not started backups (OmniCube command svt-backup-show just includes started backups)
+Bugfix for parameter -D. The --until argument is now being used for the OmniCube command
+Timeout parameter is now also being used for the OmniCube commands and not just the SSH connect
 
 v1.2
 Changed policy check that you can list hosts with a specific policy name

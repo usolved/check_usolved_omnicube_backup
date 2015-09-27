@@ -26,6 +26,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ------------------------
 
+v1.4
+The XML output has an extra line when too much results are found with the svt-backup-show. Added --max-results parameter to fix this.
+
 v1.3
 Added enhanced argument status:notstarted to check for not started backups (OmniCube command svt-backup-show just includes started backups)
 Bugfix for parameter -D. The --until argument is now being used for the OmniCube command
@@ -58,6 +61,10 @@ except ImportError:
 
 ######################################################################
 # Definitions of variables
+
+#max results for svt-backup-show command
+max_results 	= 10000
+
 
 # Arrays for return codes and return message
 return_code 	= { 'OK': 0, 'WARNING': 1, 'CRITICAL': 2, 'UNKNOWN': 3 }
@@ -148,11 +155,14 @@ def get_failed_backups():
 		time_until_date	 			= ' --until ' + datetime.datetime.fromtimestamp(time_until_date_timestamp).strftime('%Y-%m-%d')
 
 
-	ssh.sendline('svt-backup-show --output xml --timeout '+str(arg_timeout) + time_since_date + time_until_date)
+	#strip out unnecessary xml tags to shrink the size
+	ssh.sendline('svt-backup-show --output xml --max-results '+str(max_results)+' --timeout '+str(arg_timeout) + time_since_date + time_until_date+' | sed "/\(<dcId>\|<sentSize>\|<sourceVmDeploymentStatus>\|<name>\|<hiveId>\|<consistency>\|<consistent>\|<pedigree>\|<dsId>\|<expirationTime>\|<logicalSize>\|<lastTimeSizeCalc>\|<id>\|<backupId>\|<datastore>\|<vmDeleteTime>\|<percentComp>\|<vmRemovedTime>\|<percentTrans>\|<repTaskId>\|<dsRemoved>\|<datacenter>\|<uniqueSize>\)/d"')
 	ssh.prompt()
 	data = ssh.before
 
 	data, rest = data.split('\n', 1) #strip out command itself
+
+
 
 	return rest
 
